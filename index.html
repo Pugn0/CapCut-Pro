@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>CapCut - Gerenciador de Vídeos</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0a0e13 0%, #1a1f2e 100%);
+      color: #e8edf5;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .header { background: #1e2532; padding: 28px; border-radius: 16px; margin-bottom: 24px; }
+    .header h1 {
+      font-size: 28px;
+      background: linear-gradient(135deg, #009EE3 0%, #00d4ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .status { padding: 12px; background: rgba(0,158,227,0.1); border-left: 4px solid #009EE3; border-radius: 8px; margin-bottom: 24px; }
+    .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+    .video-card {
+      background: #2a3142;
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid rgba(255,255,255,0.05);
+      transition: all 0.3s ease;
+    }
+    .video-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+    .video-name { font-weight: 600; margin-bottom: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .video-path { font-size: 12px; color: #9fb7d6; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; margin-bottom: 10px; word-break: break-all; }
+    .video-actions { display: flex; gap: 10px; }
+    button {
+      flex: 1; border: none; border-radius: 8px; padding: 10px 14px; font-weight: 600; cursor: pointer;
+      transition: all 0.3s ease; color: white;
+    }
+    button.play { background: linear-gradient(135deg, #009EE3 0%, #0088cc 100%); }
+    button.delete { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+    button.download { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+    button:hover { transform: translateY(-2px); opacity: 0.9; }
+    .empty-state { text-align: center; color: #6b7f99; padding: 60px 20px; }
+
+    /* Modal */
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 100; align-items: center; justify-content: center; }
+    .modal.show { display: flex; }
+    .modal-content {
+      background: #1e2532;
+      border-radius: 20px;
+      padding: 24px;
+      width: 80%;
+      max-width: 800px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    video { width: 100%; border-radius: 12px; background: black; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .close-btn {
+      background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3);
+      width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header"><h1>📂 CapCut - Gerenciador de Vídeos</h1></div>
+    <div id="status" class="status">Carregando vídeos...</div>
+    <div id="lista" class="video-grid"></div>
+  </div>
+
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modalTitle">Reproduzindo vídeo</h3>
+        <button class="close-btn" onclick="fecharModal()">✕</button>
+      </div>
+      <video id="player" controls></video>
+    </div>
+  </div>
+
+  <script>
+    async function carregarVideos() {
+      const status = document.getElementById('status');
+      const lista = document.getElementById('lista');
+      status.textContent = 'Carregando vídeos...';
+      lista.innerHTML = '';
+
+      try {
+        const res = await fetch('/api/videos');
+        const data = await res.json();
+
+        if (data.erro) {
+          status.textContent = data.erro;
+          return;
+        }
+        if (data.videos.length === 0) {
+          status.textContent = 'Nenhum vídeo encontrado.';
+          lista.innerHTML = '<div class="empty-state">Nenhum vídeo _video.mp4 encontrado.</div>';
+          return;
+        }
+
+        status.textContent = `✅ ${data.total} vídeo(s) encontrado(s)`;
+        lista.innerHTML = data.videos.map((v, i) => `
+          <div class="video-card">
+            <div class="video-name">${v.arquivo}</div>
+            <div class="video-path">${v.caminho}</div>
+            <div class="video-actions">
+              <button class="play" onclick="assistir('${encodeURIComponent(v.caminho)}', '${v.arquivo}')">▶️ Assistir</button>
+              <button class="download" onclick="baixar('${encodeURIComponent(v.caminho)}')">⬇️ Baixar</button>
+              <button class="delete" onclick="excluir('${v.pasta}')">🗑️ Excluir</button>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+        status.textContent = 'Erro ao carregar vídeos.';
+      }
+    }
+
+    function assistir(caminho, nome) {
+      const modal = document.getElementById('modal');
+      const player = document.getElementById('player');
+      const title = document.getElementById('modalTitle');
+      title.textContent = nome;
+      player.src = '/api/download?path=' + caminho;
+      modal.classList.add('show');
+    }
+
+    function fecharModal() {
+      const modal = document.getElementById('modal');
+      const player = document.getElementById('player');
+      player.pause();
+      player.src = '';
+      modal.classList.remove('show');
+    }
+
+    function baixar(caminho) {
+      window.open('/api/download?path=' + caminho, '_blank');
+    }
+
+    async function excluir(pasta) {
+      if (!confirm(`Tem certeza que deseja excluir a pasta ${pasta}?`)) return;
+      await fetch('/api/delete?folder=' + encodeURIComponent(pasta), { method: 'DELETE' });
+      alert('🗑️ Pasta excluída!');
+      carregarVideos();
+    }
+
+    window.addEventListener('load', carregarVideos);
+  </script>
+</body>
+</html>
