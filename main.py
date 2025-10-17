@@ -14,6 +14,7 @@ PORT = 8000
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CAPCUT_PATH = r"C:\Users\pugno\Videos\CapCut\CapCut Drafts"
 VIDEO_PATTERN = re.compile(r".*_video\.mp4$", re.IGNORECASE)
+THUMB_PATTERN = re.compile(r".*_cover\.jpg$", re.IGNORECASE)
 
 os.chdir(BASE_DIR)
 
@@ -23,21 +24,34 @@ os.chdir(BASE_DIR)
 # -----------------------------
 def listar_videos():
     resultados = []
+    pastas_com_video = set()
+
     if not os.path.exists(CAPCUT_PATH):
         return {"erro": f"Pasta não encontrada: {CAPCUT_PATH}"}
 
     for subdir in sorted(os.listdir(CAPCUT_PATH)):
-        if subdir.isdigit():
-            comb_path = os.path.join(CAPCUT_PATH, subdir, "Resources", "combination")
-            if os.path.exists(comb_path):
-                for file in os.listdir(comb_path):
-                    if VIDEO_PATTERN.match(file):
-                        resultados.append({
-                            "pasta": subdir,
-                            "arquivo": file,
-                            "caminho": os.path.join(comb_path, file)
-                        })
-    return {"videos": resultados, "total": len(resultados)}
+        comb_path = os.path.join(CAPCUT_PATH, subdir, "Resources", "combination")
+        if os.path.exists(comb_path):
+            thumb_path = None
+            for file in os.listdir(comb_path):
+                if THUMB_PATTERN.match(file):
+                    thumb_path = os.path.join(comb_path, file)
+                    break  # usa a primeira arte encontrada
+
+            for file in os.listdir(comb_path):
+                if VIDEO_PATTERN.match(file):
+                    pastas_com_video.add(subdir)
+                    resultados.append({
+                        "pasta": subdir,
+                        "arquivo": file,
+                        "caminho": os.path.join(comb_path, file),
+                        "thumb": thumb_path
+                    })
+    return {
+        "videos": resultados,
+        "total": len(resultados),
+        "pastas": len(pastas_com_video)
+    }
 
 
 def excluir_pasta(pasta_nome):
@@ -92,6 +106,22 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.send_header("Content-Disposition", f'attachment; filename="{os.path.basename(video_path)}"')
             self.end_headers()
             with open(video_path, "rb") as f:
+                shutil.copyfileobj(f, self.wfile)
+            return
+
+        if path == "/api/thumb":
+            thumb_path = query.get("path", [""])[0]
+            thumb_path = urllib.parse.unquote(thumb_path)
+            if not os.path.exists(thumb_path):
+                self.send_response(404)
+                self.end_headers()
+                self.wfile.write(b"Thumbnail nao encontrada")
+                return
+
+            self.send_response(200)
+            self.send_header("Content-Type", "image/jpeg")
+            self.end_headers()
+            with open(thumb_path, "rb") as f:
                 shutil.copyfileobj(f, self.wfile)
             return
 

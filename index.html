@@ -61,6 +61,46 @@
       background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3);
       width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
     }
+    .thumb-container {
+  position: relative;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.thumb-video {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  transition: all 0.3s ease;
+  display: block;
+  background: #000;
+}
+
+.thumb-container:hover .thumb-video {
+  transform: scale(1.05);
+  filter: brightness(0.8);
+}
+
+.thumb-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 158, 227, 0.7);
+  color: white;
+  font-size: 28px;
+  padding: 10px 18px;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.thumb-container:hover .thumb-overlay {
+  opacity: 1;
+}
+
   </style>
 </head>
 <body>
@@ -80,74 +120,87 @@
     </div>
   </div>
 
-  <script>
-    async function carregarVideos() {
-      const status = document.getElementById('status');
-      const lista = document.getElementById('lista');
-      status.textContent = 'Carregando vídeos...';
-      lista.innerHTML = '';
+<script>
+  async function carregarVideos() {
+    const status = document.getElementById('status');
+    const lista = document.getElementById('lista');
+    status.textContent = 'Carregando vídeos...';
+    lista.innerHTML = '';
 
-      try {
-        const res = await fetch('/api/videos');
-        const data = await res.json();
+    try {
+      const res = await fetch('/api/videos');
+      const data = await res.json();
 
-        if (data.erro) {
-          status.textContent = data.erro;
-          return;
-        }
-        if (data.videos.length === 0) {
-          status.textContent = 'Nenhum vídeo encontrado.';
-          lista.innerHTML = '<div class="empty-state">Nenhum vídeo _video.mp4 encontrado.</div>';
-          return;
-        }
+      if (data.erro) {
+        status.textContent = data.erro;
+        return;
+      }
 
-        status.textContent = `✅ ${data.total} vídeo(s) encontrado(s)`;
-        lista.innerHTML = data.videos.map((v, i) => `
+      if (data.videos.length === 0) {
+        status.textContent = 'Nenhum vídeo encontrado.';
+        lista.innerHTML = '<div class="empty-state">Nenhum vídeo _video.mp4 encontrado.</div>';
+        return;
+      }
+
+      status.textContent = `✅ ${data.total} vídeo(s) em ${data.pastas} pasta(s)`;
+
+      lista.innerHTML = data.videos.map((v) => {
+        const posterSrc = v.thumb
+          ? `/api/thumb?path=${encodeURIComponent(v.thumb)}`
+          : 'https://via.placeholder.com/340x180?text=Sem+Prévia';
+        const previewSrc = `/api/preview?path=${encodeURIComponent(v.caminho)}`;
+        return `
           <div class="video-card">
+            <div class="thumb-container" onclick="assistir('${encodeURIComponent(v.caminho)}', '${v.arquivo}')">
+              <video class="thumb-video" src="${previewSrc}" poster="${posterSrc}" muted playsinline autoplay loop preload="metadata"></video>
+              <div class="thumb-overlay">▶️</div>
+            </div>
             <div class="video-name">${v.arquivo}</div>
-            <div class="video-path">${v.caminho}</div>
             <div class="video-actions">
               <button class="play" onclick="assistir('${encodeURIComponent(v.caminho)}', '${v.arquivo}')">▶️ Assistir</button>
               <button class="download" onclick="baixar('${encodeURIComponent(v.caminho)}')">⬇️ Baixar</button>
               <button class="delete" onclick="excluir('${v.pasta}')">🗑️ Excluir</button>
             </div>
           </div>
-        `).join('');
-      } catch (err) {
-        console.error(err);
-        status.textContent = 'Erro ao carregar vídeos.';
-      }
+        `;
+      }).join('');
+    } catch (err) {
+      console.error(err);
+      status.textContent = 'Erro ao carregar vídeos.';
     }
+  }
 
-    function assistir(caminho, nome) {
-      const modal = document.getElementById('modal');
-      const player = document.getElementById('player');
-      const title = document.getElementById('modalTitle');
-      title.textContent = nome;
-      player.src = '/api/download?path=' + caminho;
-      modal.classList.add('show');
-    }
+  function assistir(caminho, nome) {
+    const modal = document.getElementById('modal');
+    const player = document.getElementById('player');
+    const title = document.getElementById('modalTitle');
+    title.textContent = nome;
+    player.src = '/api/download?path=' + caminho;
+    modal.classList.add('show');
+  }
 
-    function fecharModal() {
-      const modal = document.getElementById('modal');
-      const player = document.getElementById('player');
-      player.pause();
-      player.src = '';
-      modal.classList.remove('show');
-    }
+  function fecharModal() {
+    const modal = document.getElementById('modal');
+    const player = document.getElementById('player');
+    player.pause();
+    player.src = '';
+    modal.classList.remove('show');
+  }
 
-    function baixar(caminho) {
-      window.open('/api/download?path=' + caminho, '_blank');
-    }
+  function baixar(caminho) {
+    window.open('/api/download?path=' + caminho, '_blank');
+  }
 
-    async function excluir(pasta) {
-      if (!confirm(`Tem certeza que deseja excluir a pasta ${pasta}?`)) return;
-      await fetch('/api/delete?folder=' + encodeURIComponent(pasta), { method: 'DELETE' });
-      alert('🗑️ Pasta excluída!');
-      carregarVideos();
-    }
+  async function excluir(pasta) {
+    if (!confirm(`Tem certeza que deseja excluir a pasta ${pasta}?`)) return;
+    await fetch('/api/delete?folder=' + encodeURIComponent(pasta), { method: 'DELETE' });
+    alert('🗑️ Pasta excluída!');
+    carregarVideos();
+  }
 
-    window.addEventListener('load', carregarVideos);
-  </script>
+  window.addEventListener('load', carregarVideos);
+</script>
+
+
 </body>
 </html>
