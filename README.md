@@ -44,8 +44,8 @@ Feito para quem quer **acesso completo**, com **todos os recursos PRO liberados*
 
 1️⃣ **Baixe o projeto**
 ```bash
-git clone https://github.com/SEU-USUARIO/capcut-pro.git
-cd capcut-pro
+git clone https://github.com/Pugn0/CapCut-Pro.git
+cd CapCut-Pro
 ````
 
 2️⃣ **Execute o servidor**
