@@ -386,28 +386,28 @@
     }
 
     .close-btn {
-      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-      color: white;
+      background: transparent;
+      color: #e8edf5;
       border: none;
       width: 40px;
       height: 40px;
-      border-radius: 12px;
-      font-size: 20px;
+      font-size: 28px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.25s ease;
+      transition: all 0.2s ease;
       flex-shrink: 0;
+      opacity: 0.7;
     }
 
     .close-btn:hover {
-      transform: scale(1.1) rotate(90deg);
-      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+      opacity: 1;
+      color: #ef4444;
     }
 
     .close-btn:focus-visible {
-      outline: 3px solid #ef4444;
+      outline: 2px solid #009EE3;
       outline-offset: 2px;
     }
 
@@ -732,9 +732,7 @@
               muted 
               playsinline 
               loop 
-              preload="metadata"
-              onmouseenter="playPreview('${videoId}')"
-              onmouseleave="pausePreview('${videoId}')"
+              preload="auto"
               aria-hidden="true"
             ></video>
             <div class="thumb-overlay" aria-hidden="true">▶️</div>
@@ -751,6 +749,19 @@
         </div>
       `;
     }).join('');
+    
+    // Carrega as thumbnails imediatamente após renderizar
+    setTimeout(() => {
+      videos.forEach((v, index) => {
+        const videoId = `video-${index}`;
+        const video = document.getElementById(videoId);
+        if (video && video.poster) {
+          // Força o carregamento do poster
+          const img = new Image();
+          img.src = video.poster;
+        }
+      });
+    }, 100);
   }
 
   // ==================== PREVIEW COM HOVER ====================
@@ -768,6 +779,29 @@
       video.currentTime = 0;
     }
   }
+
+  // Adiciona eventos de hover após renderizar
+  document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('mouseover', function(e) {
+      const thumbContainer = e.target.closest('.thumb-container');
+      if (thumbContainer) {
+        const video = thumbContainer.querySelector('.thumb-video');
+        if (video && video.id) {
+          playPreview(video.id);
+        }
+      }
+    });
+
+    document.addEventListener('mouseout', function(e) {
+      const thumbContainer = e.target.closest('.thumb-container');
+      if (thumbContainer) {
+        const video = thumbContainer.querySelector('.thumb-video');
+        if (video && video.id) {
+          pausePreview(video.id);
+        }
+      }
+    });
+  });
 
   // ==================== MODAL DE REPRODUÇÃO ====================
   function assistir(caminho, nome) {
@@ -891,7 +925,13 @@
 
   // ==================== DOWNLOAD ====================
   function baixar(caminho) {
-    window.open('/api/download?path=' + caminho, '_blank');
+    // Cria um link temporário para forçar download
+    const a = document.createElement('a');
+    a.href = '/api/download?path=' + caminho;
+    a.download = ''; // Força o download
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }
 
   // ==================== UTILITÁRIOS ====================
