@@ -17,7 +17,8 @@ PORT = 8000
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CAPCUT_PATH = r"C:\Users\pugno\Videos\CapCut\CapCut Drafts"
 CACHE_DIR = os.path.join(BASE_DIR, ".thumb_cache")
-VIDEO_PATTERN = re.compile(r".*_video\.mp4$", re.IGNORECASE)
+VIDEO_PATTERN = re.compile(r".*(_video|_\d+_\d+)\.mp4$", re.IGNORECASE)
+
 THUMB_PATTERN = re.compile(r".*_cover\.jpg$", re.IGNORECASE)
 
 os.chdir(BASE_DIR)
@@ -75,10 +76,18 @@ def listar_videos():
         return {"erro": f"Pasta não encontrada: {CAPCUT_PATH}"}
 
     for subdir in sorted(os.listdir(CAPCUT_PATH)):
-        comb_path = os.path.join(CAPCUT_PATH, subdir, "Resources", "combination")
-        if os.path.exists(comb_path):
+        # Caminhos possíveis onde o CapCut salva vídeos
+        search_paths = [
+            os.path.join(CAPCUT_PATH, subdir, "Resources", "videoAlg"),
+            os.path.join(CAPCUT_PATH, subdir, "Resources", "combination")
+        ]
+
+        for comb_path in search_paths:
+            if not os.path.exists(comb_path):
+                continue
+
             thumb_path = None
-            
+
             # Procura por _cover.jpg primeiro
             for file in os.listdir(comb_path):
                 if THUMB_PATTERN.match(file):
@@ -89,22 +98,24 @@ def listar_videos():
                 if VIDEO_PATTERN.match(file):
                     pastas_com_video.add(subdir)
                     video_path = os.path.join(comb_path, file)
-                    
+
                     # Se não tem _cover.jpg, tenta gerar thumbnail
                     if not thumb_path:
                         thumb_path = gerar_thumbnail(video_path)
-                    
+
                     resultados.append({
                         "pasta": subdir,
                         "arquivo": file,
                         "caminho": video_path,
                         "thumb": thumb_path
                     })
+
     return {
         "videos": resultados,
         "total": len(resultados),
         "pastas": len(pastas_com_video)
     }
+
 
 
 def excluir_pasta(pasta_nome):
