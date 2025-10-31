@@ -4,127 +4,684 @@
   <meta charset="utf-8" />
   <title>CapCut - Gerenciador de Vídeos</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    /* ==================== BASE STYLES ==================== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: 'Inter', sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background: linear-gradient(135deg, #0a0e13 0%, #1a1f2e 100%);
       color: #e8edf5;
       min-height: 100vh;
-      margin: 0;
       padding: 20px;
+      overflow-x: hidden;
     }
-    .container { max-width: 1200px; margin: 0 auto; }
-    .header { background: #1e2532; padding: 28px; border-radius: 16px; margin-bottom: 24px; }
+
+    /* ==================== LAYOUT ==================== */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ==================== HEADER ==================== */
+    .header {
+      background: linear-gradient(135deg, #1e2532 0%, #252d3d 100%);
+      padding: 32px;
+      border-radius: 20px;
+      margin-bottom: 28px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
     .header h1 {
-      font-size: 28px;
+      font-size: 32px;
+      font-weight: 700;
       background: linear-gradient(135deg, #009EE3 0%, #00d4ff 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
     }
-    .status { padding: 12px; background: rgba(0,158,227,0.1); border-left: 4px solid #009EE3; border-radius: 8px; margin-bottom: 24px; }
-    .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
-    .video-card {
-      background: #2a3142;
-      border-radius: 16px;
-      padding: 20px;
-      border: 1px solid rgba(255,255,255,0.05);
+
+    .header p {
+      color: #9fb7d6;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    /* ==================== STATUS BAR ==================== */
+    .status {
+      padding: 16px 20px;
+      background: rgba(0, 158, 227, 0.1);
+      border-left: 4px solid #009EE3;
+      border-radius: 12px;
+      margin-bottom: 28px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 12px;
       transition: all 0.3s ease;
     }
-    .video-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
-    .video-name { font-weight: 600; margin-bottom: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .video-path { font-size: 12px; color: #9fb7d6; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; margin-bottom: 10px; word-break: break-all; }
-    .video-actions { display: flex; gap: 10px; }
-    button {
-      flex: 1; border: none; border-radius: 8px; padding: 10px 14px; font-weight: 600; cursor: pointer;
-      transition: all 0.3s ease; color: white;
-    }
-    button.play { background: linear-gradient(135deg, #009EE3 0%, #0088cc 100%); }
-    button.delete { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
-    button.download { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-    button:hover { transform: translateY(-2px); opacity: 0.9; }
-    .empty-state { text-align: center; color: #6b7f99; padding: 60px 20px; }
 
-    /* Modal */
-    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 100; align-items: center; justify-content: center; }
-    .modal.show { display: flex; }
-    .modal-content {
-      background: #1e2532;
+    .status.loading {
+      background: rgba(251, 191, 36, 0.1);
+      border-left-color: #fbbf24;
+    }
+
+    .status.error {
+      background: rgba(239, 68, 68, 0.1);
+      border-left-color: #ef4444;
+    }
+
+    .status.success {
+      background: rgba(16, 185, 129, 0.1);
+      border-left-color: #10b981;
+    }
+
+    /* ==================== SPINNER ==================== */
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(0, 158, 227, 0.2);
+      border-top-color: #009EE3;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ==================== VIDEO GRID ==================== */
+    .video-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 24px;
+      animation: fadeIn 0.6s ease-out 0.2s both;
+    }
+
+    .video-card {
+      background: linear-gradient(135deg, #2a3142 0%, #232936 100%);
       border-radius: 20px;
-      padding: 24px;
-      width: 80%;
-      max-width: 800px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      padding: 0;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+      opacity: 0;
+      animation: slideIn 0.5s ease-out forwards;
     }
-    video { width: 100%; border-radius: 12px; background: black; }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .close-btn {
-      background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3);
-      width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
+
+    .video-card:nth-child(1) { animation-delay: 0.1s; }
+    .video-card:nth-child(2) { animation-delay: 0.15s; }
+    .video-card:nth-child(3) { animation-delay: 0.2s; }
+    .video-card:nth-child(4) { animation-delay: 0.25s; }
+    .video-card:nth-child(5) { animation-delay: 0.3s; }
+    .video-card:nth-child(6) { animation-delay: 0.35s; }
+
+    .video-card:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 16px 48px rgba(0, 158, 227, 0.2);
+      border-color: rgba(0, 158, 227, 0.3);
+    }
+
+    /* ==================== THUMBNAIL ==================== */
     .thumb-container {
-  position: relative;
-  width: 100%;
-  border-radius: 12px;
-  overflow: hidden;
-  cursor: pointer;
-}
+      position: relative;
+      width: 100%;
+      height: 200px;
+      border-radius: 0;
+      overflow: hidden;
+      cursor: pointer;
+      background: #000;
+    }
 
-.thumb-video {
-  width: 100%;
-  height: 180px;
-  object-fit: cover;
-  transition: all 0.3s ease;
-  display: block;
-  background: #000;
-}
+    .thumb-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: all 0.4s ease;
+      display: block;
+      filter: brightness(0.85);
+    }
 
-.thumb-container:hover .thumb-video {
-  transform: scale(1.05);
-  filter: brightness(0.8);
-}
+    .thumb-container:hover .thumb-video {
+      transform: scale(1.1);
+      filter: brightness(0.6);
+    }
 
-.thumb-overlay {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(0, 158, 227, 0.7);
-  color: white;
-  font-size: 28px;
-  padding: 10px 18px;
-  border-radius: 50%;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
+    .thumb-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 158, 227, 0.9);
+      color: white;
+      font-size: 36px;
+      width: 70px;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      opacity: 0;
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
 
-.thumb-container:hover .thumb-overlay {
-  opacity: 1;
-}
+    .thumb-container:hover .thumb-overlay {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.1);
+    }
 
+    /* ==================== VIDEO INFO ==================== */
+    .video-info {
+      padding: 20px;
+    }
+
+    .video-name {
+      font-weight: 600;
+      font-size: 16px;
+      margin-bottom: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #e8edf5;
+    }
+
+    .video-path {
+      font-size: 12px;
+      color: #7b8a9f;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 8px 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      word-break: break-all;
+      font-family: 'Courier New', monospace;
+      line-height: 1.5;
+    }
+
+    /* ==================== BUTTONS ==================== */
+    .video-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    button {
+      flex: 1;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      color: white;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button:focus-visible {
+      outline: 3px solid #009EE3;
+      outline-offset: 2px;
+    }
+
+    button::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    button:active::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    button.play {
+      background: linear-gradient(135deg, #009EE3 0%, #0088cc 100%);
+    }
+
+    button.play:hover {
+      background: linear-gradient(135deg, #00b8ff 0%, #009EE3 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 158, 227, 0.4);
+    }
+
+    button.delete {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    }
+
+    button.delete:hover {
+      background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+    }
+
+    button.download {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+
+    button.download:hover {
+      background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+    }
+
+    /* ==================== EMPTY STATE ==================== */
+    .empty-state {
+      text-align: center;
+      color: #6b7f99;
+      padding: 80px 20px;
+      font-size: 18px;
+      font-weight: 500;
+    }
+
+    .empty-state::before {
+      content: '📹';
+      display: block;
+      font-size: 64px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    /* ==================== MODAL ==================== */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(12px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal.show {
+      display: flex;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .modal.hide {
+      animation: fadeOut 0.25s ease forwards;
+    }
+
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    .modal-content {
+      background: linear-gradient(135deg, #1e2532 0%, #252d3d 100%);
+      border-radius: 24px;
+      padding: 28px;
+      width: 100%;
+      max-width: 900px;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(40px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      gap: 16px;
+    }
+
+    .modal-header h3 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #e8edf5;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .close-btn {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.25s ease;
+      flex-shrink: 0;
+    }
+
+    .close-btn:hover {
+      transform: scale(1.1) rotate(90deg);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    }
+
+    .close-btn:focus-visible {
+      outline: 3px solid #ef4444;
+      outline-offset: 2px;
+    }
+
+    .video-wrapper {
+      position: relative;
+      width: 100%;
+      padding-bottom: 56.25%; /* 16:9 aspect ratio */
+      background: #000;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .video-wrapper video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 16px;
+    }
+
+    /* ==================== CONFIRM MODAL ==================== */
+    .confirm-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(12px);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .confirm-modal.show {
+      display: flex;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .confirm-modal.hide {
+      animation: fadeOut 0.25s ease forwards;
+    }
+
+    .confirm-content {
+      background: linear-gradient(135deg, #1e2532 0%, #252d3d 100%);
+      border-radius: 20px;
+      padding: 32px;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      text-align: center;
+    }
+
+    .confirm-icon {
+      font-size: 56px;
+      margin-bottom: 16px;
+      animation: bounce 0.6s ease-out;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .confirm-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #e8edf5;
+    }
+
+    .confirm-message {
+      font-size: 15px;
+      color: #9fb7d6;
+      margin-bottom: 28px;
+      line-height: 1.6;
+    }
+
+    .confirm-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .confirm-btn {
+      flex: 1;
+      padding: 14px 24px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.3s ease;
+    }
+
+    .confirm-btn-cancel {
+      background: rgba(255, 255, 255, 0.1);
+      color: #e8edf5;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .confirm-btn-cancel:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .confirm-btn-confirm {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+    }
+
+    .confirm-btn-confirm:hover {
+      background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+    }
+
+    /* ==================== RESPONSIVE DESIGN ==================== */
+    @media (max-width: 768px) {
+      body {
+        padding: 12px;
+      }
+
+      .header {
+        padding: 24px 20px;
+        margin-bottom: 20px;
+      }
+
+      .header h1 {
+        font-size: 24px;
+      }
+
+      .header p {
+        font-size: 13px;
+      }
+
+      .video-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      .thumb-container {
+        height: 180px;
+      }
+
+      .video-actions {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .modal-content {
+        padding: 20px;
+        margin: 10px;
+      }
+
+      .modal-header h3 {
+        font-size: 16px;
+      }
+
+      .close-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+      }
+
+      .confirm-content {
+        padding: 24px;
+        margin: 10px;
+      }
+
+      .confirm-icon {
+        font-size: 48px;
+      }
+
+      .confirm-title {
+        font-size: 18px;
+      }
+
+      .confirm-actions {
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .status {
+        font-size: 13px;
+        padding: 12px 16px;
+      }
+
+      .video-name {
+        font-size: 14px;
+      }
+
+      button {
+        padding: 10px 14px;
+        font-size: 13px;
+      }
+    }
+
+    /* ==================== ACCESSIBILITY ==================== */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+
+    *:focus-visible {
+      outline: 3px solid #009EE3;
+      outline-offset: 2px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="header"><h1>📂 CapCut - Gerenciador de Vídeos</h1></div>
-    <div id="status" class="status">Carregando vídeos...</div>
+    <div class="header">
+      <h1>🎬 CapCut - Gerenciador de Vídeos</h1>
+      <p>Organize e reproduza seus vídeos facilmente</p>
+    </div>
+    <div id="status" class="status">
+      <div class="spinner"></div>
+      <span>Carregando vídeos...</span>
+    </div>
     <div id="lista" class="video-grid"></div>
   </div>
 
-  <div id="modal" class="modal">
+  <!-- Modal de Reprodução -->
+  <div id="modal" class="modal" role="dialog" aria-labelledby="modalTitle" aria-modal="true">
     <div class="modal-content">
       <div class="modal-header">
         <h3 id="modalTitle">Reproduzindo vídeo</h3>
-        <button class="close-btn" onclick="fecharModal()">✕</button>
+        <button class="close-btn" onclick="fecharModal()" aria-label="Fechar modal">✕</button>
       </div>
-      <video id="player" controls></video>
+      <div class="video-wrapper">
+        <video id="player" controls aria-label="Player de vídeo"></video>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Confirmação -->
+  <div id="confirmModal" class="confirm-modal" role="dialog" aria-labelledby="confirmTitle" aria-modal="true">
+    <div class="confirm-content">
+      <div class="confirm-icon">🗑️</div>
+      <h3 id="confirmTitle" class="confirm-title">Confirmar Exclusão</h3>
+      <p class="confirm-message">Tem certeza que deseja excluir a pasta <strong id="confirmFolderName"></strong>? Esta ação não pode ser desfeita.</p>
+      <div class="confirm-actions">
+        <button class="confirm-btn confirm-btn-cancel" onclick="fecharConfirm()" aria-label="Cancelar exclusão">Cancelar</button>
+        <button class="confirm-btn confirm-btn-confirm" id="confirmDeleteBtn" aria-label="Confirmar exclusão">Excluir</button>
+      </div>
     </div>
   </div>
 
 <script>
+  // ==================== VARIÁVEIS GLOBAIS ====================
+  let pastaParaExcluir = null;
+
+  // ==================== CARREGAR VÍDEOS ====================
   async function carregarVideos() {
     const status = document.getElementById('status');
     const lista = document.getElementById('lista');
-    status.textContent = 'Carregando vídeos...';
+    
+    // Estado de carregamento
+    status.className = 'status loading';
+    status.innerHTML = '<div class="spinner"></div><span>Carregando vídeos...</span>';
     lista.innerHTML = '';
 
     try {
@@ -132,75 +689,244 @@
       const data = await res.json();
 
       if (data.erro) {
-        status.textContent = data.erro;
+        mostrarStatus('error', data.erro);
         return;
       }
 
       if (data.videos.length === 0) {
-        status.textContent = 'Nenhum vídeo encontrado.';
-        lista.innerHTML = '<div class="empty-state">Nenhum vídeo _video.mp4 encontrado.</div>';
+        mostrarStatus('success', 'Nenhum vídeo encontrado.');
+        lista.innerHTML = '<div class="empty-state">Nenhum vídeo _video.mp4 encontrado</div>';
         return;
       }
 
-      status.textContent = `✅ ${data.total} vídeo(s) em ${data.pastas} pasta(s)`;
+      mostrarStatus('success', `✅ ${data.total} vídeo(s) em ${data.pastas} pasta(s)`);
+      renderizarVideos(data.videos);
 
-      lista.innerHTML = data.videos.map((v) => {
-        const posterSrc = v.thumb
-          ? `/api/thumb?path=${encodeURIComponent(v.thumb)}`
-          : 'https://via.placeholder.com/340x180?text=Sem+Prévia';
-        const previewSrc = `/api/preview?path=${encodeURIComponent(v.caminho)}`;
-        return `
-          <div class="video-card">
-            <div class="thumb-container" onclick="assistir('${encodeURIComponent(v.caminho)}', '${v.arquivo}')">
-              <video class="thumb-video" src="${previewSrc}" poster="${posterSrc}" muted playsinline autoplay loop preload="metadata"></video>
-              <div class="thumb-overlay">▶️</div>
-            </div>
-            <div class="video-name">${v.arquivo}</div>
-            <div class="video-actions">
-              <button class="play" onclick="assistir('${encodeURIComponent(v.caminho)}', '${v.arquivo}')">▶️ Assistir</button>
-              <button class="download" onclick="baixar('${encodeURIComponent(v.caminho)}')">⬇️ Baixar</button>
-              <button class="delete" onclick="excluir('${v.pasta}')">🗑️ Excluir</button>
-            </div>
-          </div>
-        `;
-      }).join('');
     } catch (err) {
-      console.error(err);
-      status.textContent = 'Erro ao carregar vídeos.';
+      console.error('Erro ao carregar vídeos:', err);
+      mostrarStatus('error', 'Erro ao carregar vídeos. Tente novamente.');
     }
   }
 
+  // ==================== RENDERIZAR VÍDEOS ====================
+  function renderizarVideos(videos) {
+    const lista = document.getElementById('lista');
+    
+    lista.innerHTML = videos.map((v, index) => {
+      // CORREÇÃO: Usa frame do vídeo se não houver thumbnail
+      const posterSrc = v.thumb
+        ? `/api/thumb?path=${encodeURIComponent(v.thumb)}`
+        : `/api/download?path=${encodeURIComponent(v.caminho)}#t=1`;
+      
+      const previewSrc = `/api/preview?path=${encodeURIComponent(v.caminho)}`;
+      const videoId = `video-${index}`;
+      
+      return `
+        <div class="video-card">
+          <div class="thumb-container" onclick="assistir('${encodeURIComponent(v.caminho)}', '${escapeHtml(v.arquivo)}')" role="button" tabindex="0" aria-label="Reproduzir vídeo ${escapeHtml(v.arquivo)}" onkeydown="handleKeyPress(event, '${encodeURIComponent(v.caminho)}', '${escapeHtml(v.arquivo)}')">
+            <video 
+              id="${videoId}"
+              class="thumb-video" 
+              src="${previewSrc}" 
+              poster="${posterSrc}" 
+              muted 
+              playsinline 
+              loop 
+              preload="metadata"
+              onmouseenter="playPreview('${videoId}')"
+              onmouseleave="pausePreview('${videoId}')"
+              aria-hidden="true"
+            ></video>
+            <div class="thumb-overlay" aria-hidden="true">▶️</div>
+          </div>
+          <div class="video-info">
+            <div class="video-name" title="${escapeHtml(v.arquivo)}">${escapeHtml(v.arquivo)}</div>
+            <div class="video-path" title="${escapeHtml(v.caminho)}">${escapeHtml(v.caminho)}</div>
+            <div class="video-actions">
+              <button class="play" onclick="assistir('${encodeURIComponent(v.caminho)}', '${escapeHtml(v.arquivo)}')" aria-label="Assistir ${escapeHtml(v.arquivo)}">▶️ Assistir</button>
+              <button class="download" onclick="baixar('${encodeURIComponent(v.caminho)}')" aria-label="Baixar ${escapeHtml(v.arquivo)}">⬇️ Baixar</button>
+              <button class="delete" onclick="confirmarExclusao('${escapeHtml(v.pasta)}')" aria-label="Excluir pasta ${escapeHtml(v.pasta)}">🗑️ Excluir</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ==================== PREVIEW COM HOVER ====================
+  function playPreview(videoId) {
+    const video = document.getElementById(videoId);
+    if (video) {
+      video.play().catch(err => console.log('Autoplay bloqueado:', err));
+    }
+  }
+
+  function pausePreview(videoId) {
+    const video = document.getElementById(videoId);
+    if (video) {
+      video.pause();
+      video.currentTime = 0;
+    }
+  }
+
+  // ==================== MODAL DE REPRODUÇÃO ====================
   function assistir(caminho, nome) {
     const modal = document.getElementById('modal');
     const player = document.getElementById('player');
     const title = document.getElementById('modalTitle');
+    
+    modal.classList.remove('hide');
+    modal.style.display = 'flex';
     title.textContent = nome;
     player.src = '/api/download?path=' + caminho;
     modal.classList.add('show');
+    
+    // Foco no botão de fechar para acessibilidade
+    setTimeout(() => {
+      document.querySelector('.close-btn').focus();
+    }, 100);
   }
 
   function fecharModal() {
     const modal = document.getElementById('modal');
     const player = document.getElementById('player');
+    
     player.pause();
     player.src = '';
     modal.classList.remove('show');
+    modal.classList.add('hide');
+    
+    setTimeout(() => {
+      modal.style.display = 'none';
+      modal.classList.remove('hide');
+    }, 250);
   }
 
+  // Fechar modal ao clicar fora
+  document.getElementById('modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+      fecharModal();
+    }
+  });
+
+  // Fechar modal com tecla ESC
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      if (document.getElementById('modal').classList.contains('show')) {
+        fecharModal();
+      }
+      if (document.getElementById('confirmModal').classList.contains('show')) {
+        fecharConfirm();
+      }
+    }
+  });
+
+  // ==================== MODAL DE CONFIRMAÇÃO ====================
+  function confirmarExclusao(pasta) {
+    pastaParaExcluir = pasta;
+    const modal = document.getElementById('confirmModal');
+    const folderName = document.getElementById('confirmFolderName');
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+    
+    modal.classList.remove('hide');
+    modal.style.display = 'flex';
+    folderName.textContent = pasta;
+    modal.classList.add('show');
+    
+    // Remove listener antigo e adiciona novo
+    const novoBtn = confirmBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(novoBtn, confirmBtn);
+    novoBtn.addEventListener('click', executarExclusao);
+    
+    // Foco no botão de cancelar para segurança
+    setTimeout(() => {
+      document.querySelector('.confirm-btn-cancel').focus();
+    }, 100);
+  }
+
+  function fecharConfirm() {
+    const modal = document.getElementById('confirmModal');
+    modal.classList.remove('show');
+    modal.classList.add('hide');
+    pastaParaExcluir = null;
+    
+    setTimeout(() => {
+      modal.style.display = 'none';
+      modal.classList.remove('hide');
+    }, 250);
+  }
+
+  async function executarExclusao() {
+    if (!pastaParaExcluir) return;
+    
+    const modal = document.getElementById('confirmModal');
+    const status = document.getElementById('status');
+    
+    try {
+      mostrarStatus('loading', 'Excluindo pasta...');
+      
+      const res = await fetch('/api/delete?folder=' + encodeURIComponent(pastaParaExcluir), { 
+        method: 'DELETE' 
+      });
+      
+      if (res.ok) {
+        mostrarStatus('success', '✅ Pasta excluída com sucesso!');
+        fecharConfirm();
+        setTimeout(carregarVideos, 500);
+      } else {
+        mostrarStatus('error', 'Erro ao excluir pasta.');
+      }
+    } catch (err) {
+      console.error('Erro ao excluir:', err);
+      mostrarStatus('error', 'Erro ao excluir pasta. Tente novamente.');
+    }
+  }
+
+  // Fechar confirm ao clicar fora
+  document.getElementById('confirmModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+      fecharConfirm();
+    }
+  });
+
+  // ==================== DOWNLOAD ====================
   function baixar(caminho) {
     window.open('/api/download?path=' + caminho, '_blank');
   }
 
-  async function excluir(pasta) {
-    if (!confirm(`Tem certeza que deseja excluir a pasta ${pasta}?`)) return;
-    await fetch('/api/delete?folder=' + encodeURIComponent(pasta), { method: 'DELETE' });
-    alert('🗑️ Pasta excluída!');
-    carregarVideos();
+  // ==================== UTILITÁRIOS ====================
+  function mostrarStatus(tipo, mensagem) {
+    const status = document.getElementById('status');
+    status.className = `status ${tipo}`;
+    
+    if (tipo === 'loading') {
+      status.innerHTML = `<div class="spinner"></div><span>${mensagem}</span>`;
+    } else {
+      status.innerHTML = `<span>${mensagem}</span>`;
+    }
   }
 
+  function escapeHtml(text) {
+    const map = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
+  }
+
+  function handleKeyPress(event, caminho, nome) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      assistir(caminho, nome);
+    }
+  }
+
+  // ==================== INICIALIZAÇÃO ====================
   window.addEventListener('load', carregarVideos);
 </script>
-
 
 </body>
 </html>
